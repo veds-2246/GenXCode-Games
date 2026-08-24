@@ -1,8 +1,16 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useParams,
+} from "react-router-dom";
+
 import { AuthProvider } from "./contexts/AuthContext";
 import { SessionProvider } from "./contexts/SessionContext";
 import { GameRegistryProvider } from "./contexts/GameRegistryContext";
 import { GameRegistryInitializer } from "./games";
+
 import {
   LandingPage,
   LoginPage,
@@ -14,6 +22,7 @@ import {
   LeaderboardPage,
   AdminDashboard,
 } from "./pages";
+
 import { ArcadeLayout } from "./components/layout";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -42,6 +51,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function GameWrapperRoute() {
   const { slug } = useParams<{ slug: string }>();
+
   return <GameWrapper gameSlug={slug || ""} />;
 }
 
@@ -49,22 +59,89 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<PublicRoute><LandingPage /></PublicRoute>} path="/" />
-        <Route element={<PublicRoute><LoginPage /></PublicRoute>} path="/login" />
-        <Route element={<PublicRoute><RegisterPage /></PublicRoute>} path="/register" />
-        <Route element={<PublicRoute><WaitingPage /></PublicRoute>} path="/waiting" />
+        {/* Public Routes */}
+        <Route
+          path="/"
+          element={
+            <PublicRoute>
+              <LandingPage />
+            </PublicRoute>
+          }
+        />
 
-        <Route element={<PrivateRoute><ArcadeLayout /></PrivateRoute>}>
-          <Route element={<ArcadePage />} path="/arcade" />
-          <Route element={<GameWrapperRoute />} path="/games/:slug" />
-          <Route element={<ResultsPage />} path="/results/:slug" />
-          <Route element={<LeaderboardPage />} path="/leaderboard" />
-          <Route element={<LeaderboardPage />} path="/leaderboard/:slug" />
-          <Route element={<LeaderboardPage />} path="/leaderboard/department/:slug" />
-          <Route element={<AdminDashboard />} path="/admin" />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <LoginPage />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <RegisterPage />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/waiting"
+          element={
+            <PublicRoute>
+              <WaitingPage />
+            </PublicRoute>
+          }
+        />
+
+        {/* Private Arcade Routes */}
+        <Route
+          element={
+            <PrivateRoute>
+              <ArcadeLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route path="/arcade" element={<ArcadePage />} />
+
+          <Route
+            path="/games/:slug"
+            element={<GameWrapperRoute />}
+          />
+
+          <Route
+            path="/results/:slug"
+            element={<ResultsPage />}
+          />
+
+          <Route
+            path="/leaderboard"
+            element={<LeaderboardPage />}
+          />
+
+          <Route
+            path="/leaderboard/:slug"
+            element={<LeaderboardPage />}
+          />
+
+          <Route
+            path="/leaderboard/department/:slug"
+            element={<LeaderboardPage />}
+          />
+
+          <Route
+            path="/admin"
+            element={<AdminDashboard />}
+          />
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Unknown route */}
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
       </Routes>
     </BrowserRouter>
   );

@@ -18,10 +18,13 @@ export function GameRegistryInitializer() {
       for (const slug of GAME_SLUGS) {
         try {
           const module = await import(`./${slug}`);
+
           if (module.registerGame) {
             module.registerGame(registerGame);
           } else {
-            console.warn(`Game ${slug} does not export registerGame function`);
+            console.warn(
+              `Game ${slug} does not export registerGame function`
+            );
           }
         } catch (err) {
           console.warn(`Failed to load game ${slug}:`, err);
