@@ -1,57 +1,150 @@
-import { NumberNinja } from './games/number-ninja/NumberNinja';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useParams,
+} from "react-router-dom";
 
-export default function App() {
-  const path = window.location.pathname;
+import { AuthProvider } from "./contexts/AuthContext";
+import { SessionProvider } from "./contexts/SessionContext";
+import { GameRegistryProvider } from "./contexts/GameRegistryContext";
+import { GameRegistryInitializer } from "./games";
 
-  // Number Ninja page
-  if (path === '/number-ninja') {
-    return <NumberNinja />;
-  }
+import {
+  LandingPage,
+  LoginPage,
+  RegisterPage,
+  WaitingPage,
+  ArcadePage,
+  GameWrapper,
+  ResultsPage,
+  LeaderboardPage,
+  AdminDashboard,
+} from "./pages";
 
-  // Main Game Arcade page
+import { ArcadeLayout } from "./components/layout";
+
+function PrivateRoute({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-[#0C0224] text-[#E8E4F2] flex flex-col items-center p-6 sm:p-10">
-      <div className="w-full max-w-5xl pt-20 sm:pt-28">
-        
-        {/* Header */}
-        <div className="text-center mb-20">
-          <h1 className="text-5xl sm:text-7xl font-bold tracking-tight text-[#E8E4F2]">
-            GenXCode Games
-          </h1>
-
-          <p className="mt-4 text-xl sm:text-2xl text-[#8D82A5]">
-            Freshers Game Arcade
-          </p>
-        </div>
-
-        {/* Number Ninja Card */}
-        <div className="w-full rounded-3xl border border-[#622899] bg-[#170C2D] p-8 sm:p-10 shadow-[0_0_30px_rgba(98,40,153,0.15)]">
-          
-          <h2 className="text-3xl sm:text-4xl font-semibold text-[#E8E4F2]">
-            Number Ninja
-          </h2>
-
-          <p className="mt-4 text-lg sm:text-xl text-[#8D82A5]">
-            Guess the hidden number. Higher or lower?
-          </p>
-
-          {/* PLAY GAME */}
-          <a
-            href="/number-ninja"
-            className="inline-flex items-center mt-8 px-6 py-3 rounded-xl
-              bg-[#7B37BB]
-              text-[#E8E4F2]
-              font-semibold text-lg
-              transition-all duration-200
-              hover:bg-[#622899]
-              hover:shadow-[0_0_20px_rgba(194,169,226,0.35)]
-              hover:-translate-y-1"
-          >
-            Play Game →
-          </a>
-
-        </div>
-      </div>
-    </main>
+    <AuthProvider>
+      <SessionProvider>
+        <GameRegistryProvider>
+          <GameRegistryInitializer />
+          {children}
+        </GameRegistryProvider>
+      </SessionProvider>
+    </AuthProvider>
   );
 }
+
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      <GameRegistryProvider>
+        <GameRegistryInitializer />
+        {children}
+      </GameRegistryProvider>
+    </AuthProvider>
+  );
+}
+
+function GameWrapperRoute() {
+  const { slug } = useParams<{ slug: string }>();
+
+  return <GameWrapper gameSlug={slug || ""} />;
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Public Routes */}
+        <Route
+          path="/"
+          element={
+            <PublicRoute>
+              <LandingPage />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <LoginPage />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <RegisterPage />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/waiting"
+          element={
+            <PublicRoute>
+              <WaitingPage />
+            </PublicRoute>
+          }
+        />
+
+        {/* Private Arcade Routes */}
+        <Route
+          element={
+            <PrivateRoute>
+              <ArcadeLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route path="/arcade" element={<ArcadePage />} />
+
+          <Route
+            path="/games/:slug"
+            element={<GameWrapperRoute />}
+          />
+
+          <Route
+            path="/results/:slug"
+            element={<ResultsPage />}
+          />
+
+          <Route
+            path="/leaderboard"
+            element={<LeaderboardPage />}
+          />
+
+          <Route
+            path="/leaderboard/:slug"
+            element={<LeaderboardPage />}
+          />
+
+          <Route
+            path="/leaderboard/department/:slug"
+            element={<LeaderboardPage />}
+          />
+
+          <Route
+            path="/admin"
+            element={<AdminDashboard />}
+          />
+        </Route>
+
+        {/* Unknown route */}
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;

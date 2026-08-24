@@ -1,0 +1,1 @@
+export { OddOneOut, registerGame } from "./OddOneOut";

@@ -1,0 +1,1 @@
+export { ColorClash, registerGame } from "./ColorClash";

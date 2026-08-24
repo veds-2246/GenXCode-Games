@@ -1,1 +1,1 @@
-export { NumberNinja } from './NumberNinja';
+export { NumberNinja } from "./NumberNinja";
