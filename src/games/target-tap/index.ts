@@ -1,0 +1,1 @@
+export { TargetTap, registerGame } from "./TargetTap";
