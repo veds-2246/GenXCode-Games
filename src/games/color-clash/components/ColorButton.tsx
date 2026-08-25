@@ -1,35 +1,48 @@
-import type { ColorOption } from '../types';
+type ColorName = "RED" | "BLUE" | "GREEN" | "YELLOW";
 
 interface ColorButtonProps {
-  option: ColorOption;
-  onPress: () => void;
-  disabled?: boolean;
-  selected?: boolean;
+  color: ColorName;
+  onClick: (color: ColorName) => void;
+  disabled: boolean;
 }
 
-export function ColorButton({ option, onPress, disabled, selected }: ColorButtonProps) {
+const colorStyles: Record<ColorName, string> = {
+  RED: "bg-red-500 hover:bg-red-400 active:bg-red-600",
+  BLUE: "bg-blue-500 hover:bg-blue-400 active:bg-blue-600",
+  GREEN: "bg-green-500 hover:bg-green-400 active:bg-green-600",
+  YELLOW: "bg-yellow-400 hover:bg-yellow-300 active:bg-yellow-500",
+};
+
+export default function ColorButton({
+  color,
+  onClick,
+  disabled,
+}: ColorButtonProps) {
   return (
     <button
-      onClick={onPress}
+      type="button"
       disabled={disabled}
+      onClick={() => onClick(color)}
       className={`
-        relative flex flex-col items-center justify-center gap-2
-        min-h-[64px] min-w-[64px] sm:min-h-[72px] sm:min-w-[72px]
-        rounded-xl font-semibold text-lg sm:text-xl
-        transition-all duration-150
-        touch-manipulation select-none
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950
-        disabled:opacity-50 disabled:cursor-not-allowed
-        ${selected ? 'ring-4 ring-white scale-[0.98]' : ''}
+        min-h-20
+        w-full
+        rounded-2xl
+        px-4
+        py-5
+        text-lg
+        font-bold
+        tracking-wide
+        text-slate-950
+        shadow-lg
+        transition
+        duration-150
+        hover:-translate-y-0.5
+        disabled:cursor-not-allowed
+        disabled:opacity-60
+        ${colorStyles[color]}
       `}
-      style={{
-        backgroundColor: option.colorValue,
-        color: option.color === 'YELLOW' ? '#111827' : '#ffffff',
-      }}
-      aria-pressed={selected}
     >
-      <span className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-white/30" aria-hidden="true" />
-      <span className="uppercase tracking-wide">{option.color}</span>
+      {color}
     </button>
   );
 }
