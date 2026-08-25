@@ -16,7 +16,7 @@ interface UseGameStateReturn {
   playAgain: () => void;
 }
 
-const LIGHT_SEQUENCE_DELAY = 200;
+const LIGHT_SEQUENCE_DELAY = 500;
 const MIN_RANDOM_DELAY = 1000;
 const MAX_RANDOM_DELAY = 3000;
 const COUNTDOWN_DURATION = 1000;
