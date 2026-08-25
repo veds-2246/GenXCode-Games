@@ -1,22 +1,18 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { useDepartments } from "../../hooks";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { Select } from "../../components/ui/Select";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../../components/ui/Card";
 
 export function RegisterPage() {
   const navigate = useNavigate();
   const { signUp } = useAuth();
-  const { departments, loading: deptsLoading } = useDepartments();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [whatsapp, setWhatsApp] = useState("");
-  const [departmentId, setDepartmentId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -27,7 +23,6 @@ export function RegisterPage() {
 
     const { error } = await signUp(email, password, {
       name,
-      department_id: departmentId,
       whatsapp_number: whatsapp,
     });
 
@@ -88,16 +83,7 @@ export function RegisterPage() {
               required
               autoComplete="tel"
             />
-            <Select
-              label="Department"
-              value={departmentId}
-              onChange={(e) => setDepartmentId(e.target.value)}
-              placeholder="Select your department"
-              options={departments.map((d) => ({ value: d.id, label: d.name }))}
-              required
-              disabled={deptsLoading}
-            />
-            <Button type="submit" className="w-full" loading={loading || deptsLoading}>
+            <Button type="submit" className="w-full" loading={loading}>
               Register
             </Button>
           </form>

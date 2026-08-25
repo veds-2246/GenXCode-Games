@@ -6,7 +6,6 @@ interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
   loading?: boolean;
   emptyMessage?: string;
-  showDepartment?: boolean;
   className?: string;
 }
 
@@ -14,7 +13,6 @@ export function LeaderboardTable({
   entries,
   loading,
   emptyMessage = "No entries yet. Be the first to play!",
-  showDepartment = true,
   className,
 }: LeaderboardTableProps) {
   if (loading) {
@@ -54,9 +52,6 @@ export function LeaderboardTable({
           <tr className="border-b border-slate-200 bg-slate-50">
             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Rank</th>
             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Player</th>
-            {showDepartment && (
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Department</th>
-            )}
             <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Score</th>
             <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Played</th>
           </tr>
@@ -77,9 +72,6 @@ export function LeaderboardTable({
                 )}
               </td>
               <td className="px-4 py-3 font-medium text-slate-900">{entry.player_name}</td>
-              {showDepartment && (
-                <td className="px-4 py-3 text-slate-600">{entry.department_name}</td>
-              )}
               <td className="px-4 py-3 text-right font-mono font-semibold text-slate-900">
                 {formatScore(entry.score)}
               </td>

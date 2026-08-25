@@ -4,19 +4,9 @@ export type UserRole = Enums<"user_role">;
 export type AccessRequestStatus = Enums<"access_request_status">;
 export type SessionStatus = Enums<"session_status">;
 
-export interface Department {
-  id: string;
-  name: string;
-  slug: string;
-  is_active: boolean;
-  created_at: string;
-}
-
 export interface Profile {
   id: string;
   name: string;
-  department_id: string;
-  department?: Department;
   whatsapp_number: string;
   role: UserRole;
   created_at: string;
@@ -70,42 +60,26 @@ export interface LeaderboardEntry {
   rank: number;
   player_id: string;
   player_name: string;
-  department_name: string;
-  department_slug: string;
   score: number;
   played_at: string;
 }
 
 export interface LeaderboardFilters {
   game_id?: string;
-  department_id?: string;
   limit?: number;
   offset?: number;
 }
 
-export type DepartmentRow = Tables<"departments">;
 export type ProfileRow = Tables<"profiles">;
 export type GameRow = Tables<"games">;
 export type AccessRequestRow = Tables<"access_requests">;
 export type ArcadeSessionRow = Tables<"arcade_sessions">;
 export type GameScoreRow = Tables<"game_scores">;
 
-export function toDepartment(row: DepartmentRow): Department {
+export function toProfile(row: ProfileRow): Profile {
   return {
     id: row.id,
     name: row.name,
-    slug: row.slug,
-    is_active: row.is_active,
-    created_at: row.created_at,
-  };
-}
-
-export function toProfile(row: ProfileRow, department?: Department): Profile {
-  return {
-    id: row.id,
-    name: row.name,
-    department_id: row.department_id,
-    department,
     whatsapp_number: row.whatsapp_number,
     role: row.role,
     created_at: row.created_at,

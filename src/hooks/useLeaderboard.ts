@@ -1,16 +1,15 @@
 import { useCallback, useState, useEffect } from "react";
-import { getGlobalLeaderboard, getDepartmentLeaderboard, getGameLeaderboard } from "../services/leaderboard/leaderboard";
+import { getGlobalLeaderboard, getGameLeaderboard } from "../services/leaderboard/leaderboard";
 import type { LeaderboardEntry, LeaderboardFilters } from "../types/domain";
 
 interface UseLeaderboardOptions {
-  type: "global" | "department" | "game";
-  departmentId?: string;
+  type: "global" | "game";
   gameId?: string;
   initialFilters?: LeaderboardFilters;
 }
 
 export function useLeaderboard(options: UseLeaderboardOptions) {
-  const { type, departmentId, gameId, initialFilters = {} } = options;
+  const { type, gameId, initialFilters = {} } = options;
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -29,8 +28,6 @@ export function useLeaderboard(options: UseLeaderboardOptions) {
       let response;
       if (type === "global") {
         response = await getGlobalLeaderboard(filters);
-      } else if (type === "department" && departmentId) {
-        response = await getDepartmentLeaderboard(departmentId, filters);
       } else if (type === "game" && gameId) {
         response = await getGameLeaderboard(gameId, filters);
       } else {
@@ -52,13 +49,13 @@ export function useLeaderboard(options: UseLeaderboardOptions) {
     } finally {
       setLoading(false);
     }
-  }, [type, departmentId, gameId, filters]);
+  }, [type, gameId, filters]);
 
   useEffect(() => {
     setEntries([]);
     setFilters((prev) => ({ ...prev, offset: 0 }));
     fetchLeaderboard(false);
-  }, [type, departmentId, gameId, initialFilters]);
+  }, [type, gameId, initialFilters]);
 
   const loadMore = useCallback(() => {
     if (loading || !hasMore) return;

@@ -8,7 +8,7 @@ import { Input } from "../../components/ui/Input";
 import { Badge } from "../../components/ui/Badge";
 import { Loader } from "../../components/ui/Loader";
 import { formatDateTime } from "../../lib/utils";
-import type { ArcadeSession, Profile, AccessRequest, UserRole } from "../../types/domain";
+import type { ArcadeSession, Profile, AccessRequest } from "../../types/domain";
 import { SESSION_STATUS } from "../../constants";
 
 export function AdminDashboard() {
@@ -35,9 +35,9 @@ export function AdminDashboard() {
     setLoading(true);
     try {
       const [{ data: sessionsData }, { data: requestsData }, { data: playersData }] = await Promise.all([
-        supabase.from("arcade_sessions").select("*, profiles!arcade_sessions_player_id_fkey(*, departments(*)), granted_by_profile:profiles!arcade_sessions_granted_by_fkey(*)").order("started_at", { ascending: false }),
-        supabase.from("access_requests").select("*, profiles!access_requests_player_id_fkey(*, departments(*)), approved_by_profile:profiles!access_requests_approved_by_fkey(*)").eq("status", "pending").order("requested_at", { ascending: false }),
-        supabase.from("profiles").select("*, departments(*)").eq("role", "player").order("created_at", { ascending: false }),
+        supabase.from("arcade_sessions").select("*, profiles!arcade_sessions_player_id_fkey(*), granted_by_profile:profiles!arcade_sessions_granted_by_fkey(*)").order("started_at", { ascending: false }),
+        supabase.from("access_requests").select("*, profiles!access_requests_player_id_fkey(*), approved_by_profile:profiles!access_requests_approved_by_fkey(*)").eq("status", "pending").order("requested_at", { ascending: false }),
+        supabase.from("profiles").select("*").eq("role", "player").order("created_at", { ascending: false }),
       ]);
 
       if (sessionsData) {
@@ -71,16 +71,8 @@ export function AdminDashboard() {
   const mapProfile = (data: any): Profile => ({
     id: data.id,
     name: data.name,
-    department_id: data.department_id,
-    department: data.departments ? {
-      id: data.departments.id,
-      name: data.departments.name,
-      slug: data.departments.slug,
-      is_active: data.departments.is_active,
-      created_at: data.departments.created_at,
-    } : undefined,
     whatsapp_number: data.whatsapp_number,
-    role: data.role as UserRole,
+    role: data.role,
     created_at: data.created_at,
     updated_at: data.updated_at,
   });
@@ -191,8 +183,7 @@ export function AdminDashboard() {
   );
 
   const filteredPlayers = players.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.department?.name.toLowerCase().includes(searchQuery.toLowerCase())
+    p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -250,7 +241,6 @@ export function AdminDashboard() {
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50">
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Player</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Department</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Started</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Expires</th>
@@ -262,7 +252,6 @@ export function AdminDashboard() {
                   {filteredSessions.map((session) => (
                     <tr key={session.id}>
                       <td className="px-4 py-3 font-medium text-slate-900">{session.player?.name || "Unknown"}</td>
-                      <td className="px-4 py-3 text-slate-600">{session.player?.department?.name || "N/A"}</td>
                       <td className="px-4 py-3">
                         <Badge variant={
                           session.status === "active" ? "success" :
@@ -303,7 +292,6 @@ export function AdminDashboard() {
                     <div className="flex items-center gap-4">
                       <div>
                         <p className="font-medium text-slate-900">{request.player?.name || "Unknown"}</p>
-                        <p className="text-sm text-slate-500">{request.player?.department?.name || "N/A"}</p>
                         <p className="text-xs text-slate-400">Requested: {formatDateTime(request.requested_at)}</p>
                       </div>
                     </div>
@@ -332,7 +320,6 @@ export function AdminDashboard() {
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50">
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Department</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">WhatsApp</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Role</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Created</th>
@@ -342,7 +329,6 @@ export function AdminDashboard() {
                   {filteredPlayers.map((player) => (
                     <tr key={player.id}>
                       <td className="px-4 py-3 font-medium text-slate-900">{player.name}</td>
-                      <td className="px-4 py-3 text-slate-600">{player.department?.name || "N/A"}</td>
                       <td className="px-4 py-3 text-sm text-slate-500">{player.whatsapp_number}</td>
                       <td className="px-4 py-3">
                         <Badge variant={player.role === "admin" ? "success" : "secondary"}>

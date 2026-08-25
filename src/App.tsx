@@ -131,11 +131,6 @@ function App() {
           />
 
           <Route
-            path="/leaderboard/department/:slug"
-            element={<LeaderboardPage />}
-          />
-
-          <Route
             path="/admin"
             element={<AdminDashboard />}
           />
