@@ -3,6 +3,7 @@ import { DIFFICULTY_CONFIGS } from './utils/constants';
 import { useGameState } from './hooks/useGameState';
 import { useTimer } from './hooks/useTimer';
 import { useScore } from './hooks/useScore';
+import type { GameRegistryEntry } from "../../types/game";
 import {
   DifficultySelector,
   GameHeader,
@@ -104,4 +105,18 @@ export function NumberNinja() {
       </div>
     </main>
   );
+}
+
+export function registerGame(register: (entry: GameRegistryEntry) => void) {
+  const entry: GameRegistryEntry = {
+    config: {
+      id: "number-ninja",
+      name: "Number Ninja",
+      slug: "number-ninja",
+      description: "Guess the secret number before time runs out.",
+      routePath: "/games/number-ninja",
+    },
+    lazyLoad: () => import("./NumberNinja").then((m) => ({ default: m.NumberNinja })),
+  };
+  register(entry);
 }

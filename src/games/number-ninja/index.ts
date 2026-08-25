@@ -1,1 +1,1 @@
-export { NumberNinja } from "./NumberNinja";
+export { NumberNinja, registerGame } from "./NumberNinja";
