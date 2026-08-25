@@ -1,3 +1,7 @@
+import { ReactionRush } from './games/reaction-rush';
+
+function App() {
+  return <ReactionRush />;
 import {
   BrowserRouter,
   Routes,
