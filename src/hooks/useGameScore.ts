@@ -14,6 +14,12 @@ export function useGameScore() {
       return { data: null, error: new Error("No active session") };
     }
 
+    // NEW FIX: Prevent submitting fake admin sessions to Supabase
+    if (session.id === "admin-session") {
+      console.log("Admin test session detected. Bypassing database submission.");
+      return { data: null, error: null };
+    }
+
     if (!validateSession()) {
       setError(new Error("Session expired or invalid"));
       return { data: null, error: new Error("Session expired or invalid") };

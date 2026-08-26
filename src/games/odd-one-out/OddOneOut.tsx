@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "../../components/ui/Button";
 import { Card, CardContent } from "../../components/ui/Card";
 import type { GameProps, GameResult, GameRegistryEntry } from "../../types/game";
@@ -27,8 +27,14 @@ export function OddOneOut({ onComplete, onExit, config }: GameProps) {
   const [level, setLevel] = useState(1);
   const [timeLeft, setTimeLeft] = useState(10);
   const [streak, setStreak] = useState(0);
-  const [timerId, setTimerId] = useState<ReturnType<typeof setInterval> | null>(null);
   const [currentCategory, setCurrentCategory] = useState<typeof CATEGORIES[0] | null>(null);
+
+  // Use refs to avoid stale closures during game completion
+  const statsRef = useRef({ score, level, streak });
+  
+  useEffect(() => {
+    statsRef.current = { score, level, streak };
+  }, [score, level, streak]);
 
   const generateRound = useCallback(() => {
     const category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
@@ -39,7 +45,6 @@ export function OddOneOut({ onComplete, onExit, config }: GameProps) {
       emoji: i === oddIndex ? category.odd : category.base,
       isOdd: i === oddIndex,
     }));
-    // Shuffle
     setItems(newItems.sort(() => Math.random() - 0.5));
     setCurrentCategory(category);
     setTimeLeft(Math.max(5, 10 - level));
@@ -51,19 +56,29 @@ export function OddOneOut({ onComplete, onExit, config }: GameProps) {
     setStreak(0);
     setState("active");
     generateRound();
-
-    const timerInterval = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          clearInterval(timerInterval);
-          finishGame();
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-    setTimerId(timerInterval);
   };
+
+  const finishGame = useCallback(() => {
+    setState("finished"); // Set local state to finished
+    const result: GameResult = {
+      gameId: config.id,
+      score: statsRef.current.score,
+      duration: 30000,
+      completed: true,
+      metadata: { levelReached: statsRef.current.level, streak: statsRef.current.streak },
+    };
+    onComplete(result);
+  }, [config.id, onComplete]);
+
+  // Clean useEffect to handle the timer and avoid React render warnings
+  useEffect(() => {
+    if (state === "active" && timeLeft > 0) {
+      const timer = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (state === "active" && timeLeft === 0) {
+      finishGame();
+    }
+  }, [state, timeLeft, finishGame]);
 
   const handleItemClick = (index: number) => {
     if (state !== "active") return;
@@ -77,18 +92,6 @@ export function OddOneOut({ onComplete, onExit, config }: GameProps) {
     } else {
       setStreak(0);
     }
-  };
-
-  const finishGame = () => {
-    if (timerId) clearInterval(timerId);
-    const result: GameResult = {
-      gameId: config.id,
-      score,
-      duration: 30000,
-      completed: true,
-      metadata: { levelReached: level, streak },
-    };
-    onComplete(result);
   };
 
   if (state === "ready") {
