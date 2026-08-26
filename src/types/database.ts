@@ -9,35 +9,10 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      departments: {
-        Row: {
-          id: string;
-          name: string;
-          slug: string;
-          is_active: boolean;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          name: string;
-          slug: string;
-          is_active?: boolean;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          name?: string;
-          slug?: string;
-          is_active?: boolean;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
       profiles: {
         Row: {
           id: string;
           name: string;
-          department_id: string;
           whatsapp_number: string;
           role: "player" | "admin";
           created_at: string;
@@ -46,7 +21,6 @@ export interface Database {
         Insert: {
           id: string;
           name: string;
-          department_id: string;
           whatsapp_number: string;
           role?: "player" | "admin";
           created_at?: string;
@@ -55,21 +29,12 @@ export interface Database {
         Update: {
           id?: string;
           name?: string;
-          department_id?: string;
           whatsapp_number?: string;
           role?: "player" | "admin";
           created_at?: string;
           updated_at?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "profiles_department_id_fkey";
-            columns: ["department_id"];
-            isOneToOne: false;
-            referencedRelation: "departments";
-            referencedColumns: ["id"];
-          }
-        ];
+        Relationships: [];
       };
       games: {
         Row: {

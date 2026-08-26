@@ -23,3 +23,4 @@ export function registerGame(
 
   register(entry);
 }
+export { NumberNinja, registerGame } from "./NumberNinja";

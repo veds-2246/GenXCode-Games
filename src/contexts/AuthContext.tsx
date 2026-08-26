@@ -11,7 +11,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, profileData: Omit<Profile, "id" | "role" | "created_at" | "updated_at">) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  requestAccess: (profileData: Omit<Profile, "id" | "role" | "created_at" | "updated_at">) => Promise<{ error: Error | null }>;
+  requestAccess: () => Promise<{ error: Error | null }>;
   refreshProfile: () => Promise<void>;
   isAdmin: boolean;
 }
@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("*, departments(*)")
+      .select("*")
       .eq("id", userId)
       .single();
 
@@ -40,14 +40,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profile: Profile = {
         id: data.id,
         name: data.name,
-        department_id: data.department_id,
-        department: data.departments ? {
-          id: data.departments.id,
-          name: data.departments.name,
-          slug: data.departments.slug,
-          is_active: data.departments.is_active,
-          created_at: data.departments.created_at,
-        } : undefined,
         whatsapp_number: data.whatsapp_number,
         role: data.role as UserRole,
         created_at: data.created_at,

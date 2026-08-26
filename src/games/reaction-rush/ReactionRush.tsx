@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "../../components/ui/Button";
 import { Card, CardContent } from "../../components/ui/Card";
-import type { GameProps, GameResult } from "../../types/game";
-
+import type { GameProps, GameResult, GameRegistryEntry } from "../../types/game";
 export function ReactionRush({ session, onComplete, onExit, config }: GameProps) {
   const [state, setState] = useState<"ready" | "waiting" | "active" | "finished">("ready");
   const [reactionTime, setReactionTime] = useState<number | null>(null);
@@ -145,5 +144,3 @@ export function registerGame(register: (entry: GameRegistryEntry) => void) {
   };
   register(entry);
 }
-
-import type { GameRegistryEntry } from "../../types/game";
