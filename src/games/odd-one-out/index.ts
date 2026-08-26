@@ -1,1 +1,1 @@
-export { OddOneOut, registerGame } from "./OddOneOut";
+export { registerGame } from "./OddOneOut";

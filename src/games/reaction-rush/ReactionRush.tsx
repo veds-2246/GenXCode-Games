@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "../../components/ui/Button";
 import { Card, CardContent } from "../../components/ui/Card";
 import type { GameProps, GameResult, GameRegistryEntry } from "../../types/game";
+
 export function ReactionRush({ session, onComplete, onExit, config }: GameProps) {
   const [state, setState] = useState<"ready" | "waiting" | "active" | "finished">("ready");
   const [reactionTime, setReactionTime] = useState<number | null>(null);
@@ -10,30 +11,40 @@ export function ReactionRush({ session, onComplete, onExit, config }: GameProps)
   const [score, setScore] = useState(0);
   const [attempts, setAttempts] = useState(0);
   const maxAttempts = 5;
+  const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.code === "Space") {
-      e.preventDefault();
-      handleAction();
-    }
+  const startRound = useCallback(() => {
+    setState("waiting");
+    const delay = 2000 + Math.random() * 3000;
+    const id = setTimeout(() => {
+      setStartTime(performance.now());
+      setState("active");
+    }, delay);
+    setTimeoutId(id);
+    timeoutIdRef.current = id;
   }, []);
 
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
+  const finishGame = useCallback(() => {
+    const result: GameResult = {
+      gameId: config.id,
+      score,
+      duration: Date.now() - (session.started_at ? new Date(session.started_at).getTime() : Date.now()),
+      completed: true,
+      metadata: { attempts, averageReaction: attempts > 0 ? score / attempts : 0 },
+    };
+    onComplete(result);
+  }, [config.id, score, attempts, session.started_at, onComplete]);
 
-  const handleAction = () => {
+  const handleAction = useCallback(() => {
     if (state === "ready") {
       startRound();
     } else if (state === "waiting") {
-      clearTimeout(timeoutId!);
+      if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
       setState("ready");
       setReactionTime(null);
-      // Early press - penalty
     } else if (state === "active") {
       const endTime = performance.now();
-      const rt = endTime - startTime!;
+      const rt = endTime - (startTime ?? endTime);
       setReactionTime(rt);
       setScore((prev) => prev + Math.max(0, 1000 - Math.floor(rt)));
       setAttempts((prev) => prev + 1);
@@ -46,28 +57,25 @@ export function ReactionRush({ session, onComplete, onExit, config }: GameProps)
         setReactionTime(null);
       }
     }
-  };
+  }, [state, startTime, attempts, startRound, finishGame]);
 
-  const startRound = () => {
-    setState("waiting");
-    const delay = 2000 + Math.random() * 3000;
-    const id = setTimeout(() => {
-      setStartTime(performance.now());
-      setState("active");
-    }, delay);
-    setTimeoutId(id);
-  };
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.code === "Space") {
+      e.preventDefault();
+      handleAction();
+    }
+  }, [handleAction]);
 
-  const finishGame = () => {
-    const result: GameResult = {
-      gameId: config.id,
-      score,
-      duration: Date.now() - (session.started_at ? new Date(session.started_at).getTime() : Date.now()),
-      completed: true,
-      metadata: { attempts, averageReaction: score / attempts },
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
     };
-    onComplete(result);
-  };
+  }, []);
 
   if (state === "ready") {
     return (

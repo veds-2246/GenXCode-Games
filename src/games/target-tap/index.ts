@@ -1,1 +1,1 @@
-export { TargetTap, registerGame } from "./TargetTap";
+export { registerGame } from "./TargetTap";

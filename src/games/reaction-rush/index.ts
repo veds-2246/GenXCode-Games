@@ -1,4 +1,4 @@
-export { ReactionRush, registerGame } from "./ReactionRush";
+export { registerGame } from "./ReactionRush";
 export * from './types';
 export * from './utils/scoring';
 export * from './hooks/useReactionTimer';
