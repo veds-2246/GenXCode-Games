@@ -1,0 +1,1 @@
+export { MemoryFlip, registerGame } from "./MemoryFlip";
