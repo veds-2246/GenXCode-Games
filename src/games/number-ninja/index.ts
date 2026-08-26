@@ -1,0 +1,1 @@
+export { NumberNinja, registerGame } from "./NumberNinja";
