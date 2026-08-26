@@ -57,7 +57,7 @@ export default function OddOneOutGame({ onComplete, onExit, config }: GameProps)
 
   const handleGameComplete = useCallback(() => {
     const result: GameResult = {
-      gameId: config.id,
+      gameId: config.id as 'odd-one-out',
       score,
       duration: totalElapsedMs,
       completed: true,
@@ -74,7 +74,7 @@ export default function OddOneOutGame({ onComplete, onExit, config }: GameProps)
 
   if (phase === 'complete') {
     handleGameComplete();
-    return <ResultScreen result={{ gameId: config.id, score, duration: totalElapsedMs, completed: true }} onRestart={handleRestart} onExit={onExit} />;
+    return <ResultScreen result={{ gameId: config.id as 'odd-one-out', score, duration: totalElapsedMs, completed: true }} onRestart={handleRestart} onExit={onExit} />;
   }
 
   return (

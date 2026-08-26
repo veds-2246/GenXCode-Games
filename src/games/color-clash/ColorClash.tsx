@@ -12,7 +12,7 @@ const COLORS = [
   { name: "Orange", class: "bg-orange-500", text: "text-orange-500" },
 ];
 
-export function ColorClash({ session, onComplete, onExit, config }: GameProps) {
+export function ColorClash({ onComplete, onExit, config }: GameProps) {
   const [state, setState] = useState<"ready" | "active" | "finished">("ready");
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(30);
@@ -49,6 +49,17 @@ export function ColorClash({ session, onComplete, onExit, config }: GameProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
+  const finishGame = useCallback(() => {
+    const result: GameResult = {
+      gameId: config.id,
+      score,
+      duration: 30000,
+      completed: true,
+      metadata: { correctAnswers: score / 10 },
+    };
+    onComplete(result);
+  }, [config.id, score, onComplete]);
+
   const startGame = useCallback(() => {
     setScore(0);
     setTimeLeft(30);
@@ -66,18 +77,7 @@ export function ColorClash({ session, onComplete, onExit, config }: GameProps) {
       });
     }, 1000);
     timerIdRef.current = id;
-  }, [nextRound]);
-
-  const finishGame = useCallback(() => {
-    const result: GameResult = {
-      gameId: config.id,
-      score,
-      duration: 30000,
-      completed: true,
-      metadata: { correctAnswers: score / 10 },
-    };
-    onComplete(result);
-  }, [config.id, score, onComplete]);
+  }, [nextRound, finishGame]);
 
   useEffect(() => {
     return () => {
@@ -123,6 +123,7 @@ export function ColorClash({ session, onComplete, onExit, config }: GameProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function registerGame(register: (entry: GameRegistryEntry) => void) {
   const entry: GameRegistryEntry = {
     config: {

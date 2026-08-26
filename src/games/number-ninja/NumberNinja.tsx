@@ -3,7 +3,7 @@ import { DIFFICULTY_CONFIGS } from './utils/constants';
 import { useGameState } from './hooks/useGameState';
 import { useTimer } from './hooks/useTimer';
 import { useScore } from './hooks/useScore';
-import type { GameRegistryEntry } from "../../types/game";
+import type { GameRegistryEntry, GameProps, GameResult } from "../../types/game";
 import {
   DifficultySelector,
   GameHeader,
@@ -12,7 +12,7 @@ import {
   GameStatus,
 } from './components';
 
-export function NumberNinja() {
+function NumberNinjaGameInternal({ onGameComplete }: { onGameComplete: (result: GameResult) => void; onExit: () => void }) {
   const {
     gameState,
     config,
@@ -38,6 +38,26 @@ export function NumberNinja() {
       handleTimeUp();
     }
   }, [isTimeUp, gameState.status, handleTimeUp]);
+
+  useEffect(() => {
+    if (gameState.status === 'won' || gameState.status === 'lost') {
+      const duration = gameState.endTime && gameState.startTime
+        ? gameState.endTime - gameState.startTime
+        : 0;
+      const result: GameResult = {
+        gameId: "number-ninja",
+        score: score?.total || 0,
+        duration,
+        completed: gameState.status === 'won',
+        metadata: {
+          difficulty: gameState.difficulty,
+          attemptsUsed,
+          secretNumber: gameState.secretNumber,
+        },
+      };
+      onGameComplete(result);
+    }
+  }, [gameState.status, gameState.endTime, gameState.startTime, attemptsUsed, score, onGameComplete]);
 
   const handleDifficultySelect = (difficulty: 'easy' | 'hard') => {
     startGame(difficulty);
@@ -107,6 +127,16 @@ export function NumberNinja() {
   );
 }
 
+export function NumberNinja({ onComplete, onExit }: GameProps) {
+  return (
+    <NumberNinjaGameInternal
+      onGameComplete={onComplete}
+      onExit={onExit}
+    />
+  );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
 export function registerGame(register: (entry: GameRegistryEntry) => void) {
   const entry: GameRegistryEntry = {
     config: {

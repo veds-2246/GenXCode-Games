@@ -10,7 +10,7 @@ interface Target {
   spawnTime: number;
 }
 
-export function TargetTap({ session, onComplete, onExit, config }: GameProps) {
+export function TargetTap({ onComplete, onExit, config }: GameProps) {
   const [state, setState] = useState<"ready" | "active" | "finished">("ready");
   const [targets, setTargets] = useState<Target[]>([]);
   const [score, setScore] = useState(0);
@@ -172,6 +172,7 @@ export function TargetTap({ session, onComplete, onExit, config }: GameProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function registerGame(register: (entry: GameRegistryEntry) => void) {
   const entry: GameRegistryEntry = {
     config: {

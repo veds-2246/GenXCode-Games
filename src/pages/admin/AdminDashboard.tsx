@@ -40,7 +40,7 @@ export function AdminDashboard() {
     requested_at: string;
     approved_at: string | null;
     approved_by: string | null;
-    approved_by_profile?: Profile;
+    approved_by_profile?: Profile | null;
   }): AccessRequest => ({
     id: data.id,
     player_id: data.player_id,
@@ -74,8 +74,9 @@ export function AdminDashboard() {
     granted_by_profile: data.granted_by_profile ? mapProfile(data.granted_by_profile) : undefined,
   });
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
+    const mounted = { current: true };
     try {
       const [{ data: requestsData }, { data: playersData }, { data: sessionsData }] = await Promise.all([
         supabase
@@ -93,23 +94,29 @@ export function AdminDashboard() {
           .order("started_at", { ascending: false }),
       ]);
 
-      if (requestsData) {
-        setAllRequests(requestsData.map(mapAccessRequest));
-      }
-      if (playersData) {
-        setPlayers(playersData.map(mapProfile));
-      }
-      if (sessionsData) {
-        setSessions(sessionsData.map(mapSession));
+      if (mounted.current) {
+        if (requestsData) {
+          setAllRequests(requestsData.map(mapAccessRequest));
+        }
+        if (playersData) {
+          setPlayers(playersData.map(mapProfile));
+        }
+        if (sessionsData) {
+          setSessions(sessionsData.map(mapSession));
+        }
       }
     } catch (err) {
       console.error("Failed to load admin data:", err);
     } finally {
-      setLoading(false);
+      if (mounted.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
+    // loadData handles its own mounted flag to prevent state updates after unmount
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
     loadData();
   }, [loadData]);
 

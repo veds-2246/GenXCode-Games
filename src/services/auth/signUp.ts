@@ -1,6 +1,5 @@
 import { supabase } from "../../lib/supabase";
 import type { Profile } from "../../types/domain";
-import { USER_ROLES } from "../../constants/roles";
 
 export async function signUp(
   email: string,
@@ -10,21 +9,20 @@ export async function signUp(
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        name: profileData.name,
+        whatsapp_number: profileData.whatsapp_number,
+      },
+    },
   });
 
   if (error || !data.user) {
     return { data: null, error };
   }
 
-  const { error: profileError } = await supabase.from("profiles").insert({
-    id: data.user.id,
-    ...profileData,
-    role: USER_ROLES.PLAYER,
-  });
-
-  if (profileError) {
-    return { data: null, error: profileError };
-  }
+  // Profile is created automatically by database trigger handle_new_user()
+  // No need to manually insert profile here
 
   return { data, error: null };
 }

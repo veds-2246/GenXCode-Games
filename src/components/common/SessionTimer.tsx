@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { cn } from "../../lib/utils";
 import { SESSION_STATUS } from "../../constants/session";
 import type { ArcadeSession } from "../../types";
@@ -8,10 +9,23 @@ interface SessionTimerProps {
 }
 
 export function SessionTimer({ session, compact = false }: SessionTimerProps) {
-  if (!session) return null;
+  const [timeRemaining, setTimeRemaining] = useState(0);
 
-  const isActive = session.status === SESSION_STATUS.ACTIVE;
-  const timeRemaining = session.expires_at ? new Date(session.expires_at).getTime() - Date.now() : 0;
+  useEffect(() => {
+    if (!session) return;
+
+    const updateTime = () => {
+      const expiresAt = session.expires_at ? new Date(session.expires_at).getTime() : 0;
+      const now = Date.now();
+      setTimeRemaining(Math.max(0, expiresAt - now));
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [session]);
+
+  const isActive = session?.status === SESSION_STATUS.ACTIVE;
   const isWarning = isActive && timeRemaining > 0 && timeRemaining <= 30 * 1000;
   const isExpired = timeRemaining <= 0;
 
@@ -21,6 +35,8 @@ export function SessionTimer({ session, compact = false }: SessionTimerProps) {
     const seconds = totalSeconds % 60;
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
+
+  if (!session) return null;
 
   if (compact) {
     return (

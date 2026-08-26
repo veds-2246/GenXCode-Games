@@ -7,7 +7,6 @@ export function ReactionRush({ session, onComplete, onExit, config }: GameProps)
   const [state, setState] = useState<"ready" | "waiting" | "active" | "finished">("ready");
   const [reactionTime, setReactionTime] = useState<number | null>(null);
   const [startTime, setStartTime] = useState<number | null>(null);
-  const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [score, setScore] = useState(0);
   const [attempts, setAttempts] = useState(0);
   const maxAttempts = 5;
@@ -20,7 +19,6 @@ export function ReactionRush({ session, onComplete, onExit, config }: GameProps)
       setStartTime(performance.now());
       setState("active");
     }, delay);
-    setTimeoutId(id);
     timeoutIdRef.current = id;
   }, []);
 
@@ -139,6 +137,7 @@ export function ReactionRush({ session, onComplete, onExit, config }: GameProps)
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function registerGame(register: (entry: GameRegistryEntry) => void) {
   const entry: GameRegistryEntry = {
     config: {

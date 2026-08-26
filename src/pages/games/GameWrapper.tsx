@@ -36,7 +36,7 @@ export function GameWrapper({ gameSlug }: GameWrapperProps) {
       try {
         const module = await entry.lazyLoad();
         setGameComponent(module.default);
-      } catch (err) {
+      } catch {
         setError("Failed to load game");
       } finally {
         setLoading(false);

@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { getGlobalLeaderboard, getGameLeaderboard } from "../services/leaderboard/leaderboard";
 import type { LeaderboardEntry, LeaderboardFilters } from "../types/domain";
 
@@ -19,6 +19,7 @@ export function useLeaderboard(options: UseLeaderboardOptions) {
     ...initialFilters,
   });
   const [hasMore, setHasMore] = useState(true);
+  const fetchLeaderboardRef = useRef<((append?: boolean) => Promise<void>) | null>(null);
 
   const fetchLeaderboard = useCallback(async (append = false) => {
     setLoading(true);
@@ -52,9 +53,16 @@ export function useLeaderboard(options: UseLeaderboardOptions) {
   }, [type, gameId, filters]);
 
   useEffect(() => {
-    setEntries([]);
-    setFilters((prev) => ({ ...prev, offset: 0 }));
-    fetchLeaderboard(false);
+    fetchLeaderboardRef.current = fetchLeaderboard;
+  }, [fetchLeaderboard]);
+
+  useEffect(() => {
+    const init = async () => {
+      setEntries([]);
+      setFilters((prev) => ({ ...prev, offset: 0 }));
+      await fetchLeaderboard(false);
+    };
+    init();
   }, [type, gameId, initialFilters]);
 
   const loadMore = useCallback(() => {
@@ -64,9 +72,9 @@ export function useLeaderboard(options: UseLeaderboardOptions) {
 
   useEffect(() => {
     if ((filters.offset ?? 0) > 0) {
-      fetchLeaderboard(true);
+      fetchLeaderboardRef.current?.(true);
     }
-  }, [filters.offset, fetchLeaderboard]);
+  }, [filters.offset]);
 
   const refresh = useCallback(() => {
     setFilters((prev) => ({ ...prev, offset: 0 }));

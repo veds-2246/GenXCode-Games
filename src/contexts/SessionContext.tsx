@@ -83,10 +83,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    fetchSession();
+    let mounted = true;
+
+    const init = async () => {
+      await fetchSession();
+    };
+
+    init();
 
     const interval = setInterval(() => {
-      if (session) {
+      if (session && mounted) {
         const remaining = getTimeRemaining(session.expires_at);
         setTimeRemaining(remaining);
         if (remaining <= 0 && session.status === SESSION_STATUS.ACTIVE) {
@@ -95,14 +101,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       }
     }, 1000);
 
-    return () => clearInterval(interval);
-  }, [session]);
-
-  useEffect(() => {
-    if (session) {
-      const remaining = getTimeRemaining(session.expires_at);
-      setTimeRemaining(remaining);
-    }
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, [session]);
 
   const createSession = async (playerId: string) => {
@@ -191,6 +193,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSession() {
   const context = useContext(SessionContext);
   if (!context) {

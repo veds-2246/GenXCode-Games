@@ -14,8 +14,6 @@ export interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, description, children, className, size = "md" }: ModalProps) {
-  if (!isOpen) return null;
-
   const sizes = {
     sm: "max-w-sm",
     md: "max-w-md",
@@ -25,6 +23,7 @@ export function Modal({ isOpen, onClose, title, description, children, className
   };
 
   useEffect(() => {
+    if (!isOpen) return;
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
@@ -34,7 +33,9 @@ export function Modal({ isOpen, onClose, title, description, children, className
       document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = "";
     };
-  }, [onClose]);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
 
   const modalContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

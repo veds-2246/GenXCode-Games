@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSession } from "../../contexts/SessionContext";
@@ -16,7 +16,7 @@ export function WaitingPage() {
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
 
-  const checkStatus = async () => {
+  const checkStatus = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -42,7 +42,7 @@ export function WaitingPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const handleRequestAccess = async () => {
     setRequesting(true);
@@ -54,10 +54,22 @@ export function WaitingPage() {
   };
 
   useEffect(() => {
-    checkStatus();
-    const interval = setInterval(checkStatus, 5000);
-    return () => clearInterval(interval);
-  }, [user]);
+    let mounted = true;
+    const init = async () => {
+      await checkStatus();
+    };
+    init();
+
+    const interval = setInterval(() => {
+      if (mounted) {
+        checkStatus();
+      }
+    }, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [checkStatus]);
 
   useEffect(() => {
     if (status === "approved" && !session) {

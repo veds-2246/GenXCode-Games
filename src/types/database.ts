@@ -11,28 +11,28 @@ export interface Database {
     Tables: {
       profiles: {
         Row: {
+          created_at: string;
           id: string;
           name: string;
-          whatsapp_number: string;
           role: "player" | "admin";
-          created_at: string;
           updated_at: string;
+          whatsapp_number: string;
         };
         Insert: {
+          created_at?: string;
           id: string;
           name: string;
-          whatsapp_number: string;
           role?: "player" | "admin";
-          created_at?: string;
           updated_at?: string;
+          whatsapp_number: string;
         };
         Update: {
+          created_at?: string;
           id?: string;
           name?: string;
-          whatsapp_number?: string;
           role?: "player" | "admin";
-          created_at?: string;
           updated_at?: string;
+          whatsapp_number?: string;
         };
         Relationships: [];
       };

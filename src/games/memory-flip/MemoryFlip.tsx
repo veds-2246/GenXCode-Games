@@ -12,9 +12,9 @@ interface CardItem {
   matched: boolean;
 }
 
-export function MemoryFlip({ session, onComplete, onExit, config }: GameProps) {
+export function MemoryFlip({ onComplete, onExit, config }: GameProps) {
   const [cards, setCards] = useState<CardItem[]>([]);
-  const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
+  const [, setFlippedIndices] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
   const [matchedPairs, setMatchedPairs] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
@@ -177,6 +177,7 @@ export function MemoryFlip({ session, onComplete, onExit, config }: GameProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function registerGame(register: (entry: GameRegistryEntry) => void) {
   const entry: GameRegistryEntry = {
     config: {

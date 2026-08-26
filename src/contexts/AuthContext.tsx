@@ -60,25 +60,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const initializeAuth = async () => {
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error ? err : new Error("Auth initialization failed"),
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    initializeAuth();
+    let mounted = true;
+
+    const init = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user && mounted) {
+          await fetchProfile(session.user.id);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(
+            err instanceof Error ? err : new Error("Auth initialization failed"),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    init();
 
     const {
       data: { subscription },
@@ -91,7 +97,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -127,6 +136,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(error);
       return { error };
     }
+
+    // Profile is created automatically by database trigger handle_new_user()
+    // No need to manually insert profile here
 
     if (data.user) {
       await fetchProfile(data.user.id);
@@ -197,6 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
