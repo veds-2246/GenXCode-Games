@@ -1,3 +1,7 @@
+import { OddOneOutGame } from "./games/odd-one-out";
+
+function App() {
+  return <OddOneOutGame />;
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { TargetTap } from './pages/TargetTap/TargetTap';
 
