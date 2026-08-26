@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { supabase } from "../lib/supabase";
 import type { ArcadeSession, SessionStatus } from "../types";
 import { SESSION_STATUS, SESSION_DURATION_MS, getTimeRemaining, isSessionActive, formatTimeRemaining } from "../constants/session";
+import { useAuth } from "./AuthContext";
 
 interface SessionContextType {
   session: ArcadeSession | null;
@@ -11,6 +12,7 @@ interface SessionContextType {
   formattedTimeRemaining: string;
   isActive: boolean;
   isWarning: boolean;
+  hasAccess: boolean;
   fetchSession: () => Promise<void>;
   createSession: (playerId: string) => Promise<{ session: ArcadeSession | null; error: Error | null }>;
   endSession: () => Promise<{ error: Error | null }>;
@@ -20,6 +22,7 @@ interface SessionContextType {
 const SessionContext = createContext<SessionContextType | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
+  const { isAdmin } = useAuth();
   const [session, setSession] = useState<ArcadeSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -166,6 +169,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   };
 
   const validateSession = (): boolean => {
+    // Admins always have valid access
+    if (isAdmin) return true;
     if (!session) return false;
     return isSessionActive(session.expires_at, session.status);
   };
@@ -173,6 +178,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const isActive = validateSession();
   const isWarning = timeRemaining > 0 && timeRemaining <= 30 * 1000;
   const formattedTimeRemaining = formatTimeRemaining(timeRemaining);
+  const hasAccess = isAdmin || isActive;
 
   return (
     <SessionContext.Provider value={{
@@ -183,6 +189,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       formattedTimeRemaining,
       isActive,
       isWarning,
+      hasAccess,
       fetchSession,
       createSession,
       endSession,

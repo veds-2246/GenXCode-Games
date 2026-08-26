@@ -1,10 +1,11 @@
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSession } from "../../contexts/SessionContext";
 import { useGameRegistry } from "../../contexts/GameRegistryContext";
 import { useGameScore } from "../../hooks";
 import { LoadingOverlay } from "../../components/ui/Loader";
 import { Card, CardContent } from "../../components/ui/Card";
+import { useAuth } from "../../contexts/AuthContext";
 import type { GameResult, GameProps, GameConfig } from "../../types/game";
 
 interface GameWrapperProps {
@@ -13,7 +14,8 @@ interface GameWrapperProps {
 
 export function GameWrapper({ gameSlug }: GameWrapperProps) {
   const navigate = useNavigate();
-  const { session, validateSession } = useSession();
+  const { session, hasAccess } = useSession();
+  const { isAdmin } = useAuth();
   const { getGame } = useGameRegistry();
   const { submit } = useGameScore();
   const [GameComponent, setGameComponent] = useState<React.ComponentType<GameProps> | null>(null);
@@ -21,6 +23,26 @@ export function GameWrapper({ gameSlug }: GameWrapperProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showLoader, setShowLoader] = useState(false);
+
+  // For admins without a session, create a mock session object for the game
+  const gameSession = useMemo(() => {
+    if (session) return session;
+    if (isAdmin) {
+      const now = new Date();
+      return {
+        id: "admin-session",
+        player_id: "admin",
+        player: undefined,
+        started_at: now.toISOString(),
+        expires_at: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+        ended_at: null,
+        status: "active" as const,
+        granted_by: "admin",
+        granted_by_profile: undefined,
+      };
+    }
+    return null;
+  }, [session, isAdmin]);
 
   useEffect(() => {
     const loadGame = async () => {
@@ -47,9 +69,10 @@ export function GameWrapper({ gameSlug }: GameWrapperProps) {
   }, [gameSlug, getGame]);
 
   const handleComplete = async (result: GameResult) => {
-    if (!session || !gameConfig) return;
+    if (!gameConfig) return;
 
-    if (!validateSession()) {
+    // Admins have implicit access, players need valid session
+    if (!hasAccess) {
       setError("Session expired. Cannot submit score.");
       return;
     }
@@ -77,7 +100,8 @@ export function GameWrapper({ gameSlug }: GameWrapperProps) {
     );
   }
 
-  if (error || !GameComponent || !gameConfig || !session) {
+  // For admins, session might be null but they still have access
+  if (error || !GameComponent || !gameConfig || (!hasAccess && !isAdmin)) {
     return (
       <Card className="max-w-2xl mx-auto">
         <CardContent className="p-8 text-center">
@@ -92,7 +116,7 @@ export function GameWrapper({ gameSlug }: GameWrapperProps) {
   }
 
   const gameProps: GameProps = {
-    session,
+    session: gameSession!,
     onComplete: handleComplete,
     onExit: handleExit,
     config: gameConfig,
