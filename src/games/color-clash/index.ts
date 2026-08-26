@@ -1,1 +1,1 @@
-export { ColorClash, registerGame } from "./ColorClash";
+export { registerGame } from "./ColorClash";

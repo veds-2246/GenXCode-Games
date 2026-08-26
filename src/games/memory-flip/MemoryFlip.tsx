@@ -1,7 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "../../components/ui/Button";
 import { Card, CardContent } from "../../components/ui/Card";
-import type { GameProps, GameResult } from "../../types/game";
+import type { GameProps, GameResult, GameRegistryEntry } from "../../types/game";
 
 const EMOJIS = ["🎮", "🎯", "🎲", "🎨", "🎪", "🎭", "🎸", "🎺", "🎻", "🎹", "🎧", "🎤"];
 
@@ -14,12 +14,12 @@ interface CardItem {
 
 export function MemoryFlip({ onComplete, onExit, config }: GameProps) {
   const [cards, setCards] = useState<CardItem[]>([]);
-  const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
+  const [, setFlippedIndices] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
   const [matchedPairs, setMatchedPairs] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
   const [state, setState] = useState<"ready" | "active" | "finished">("ready");
-  const [timerId, setTimerId] = useState<ReturnType<typeof setInterval> | null>(null);
+  const timerIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const initializeCards = useCallback(() => {
     const pairs = [...EMOJIS.slice(0, 6), ...EMOJIS.slice(0, 6)];
@@ -35,59 +35,8 @@ export function MemoryFlip({ onComplete, onExit, config }: GameProps) {
     setMatchedPairs(0);
   }, []);
 
-  const startGame = () => {
-    initializeCards();
-    setTimeLeft(60);
-    setState("active");
-
-    const id = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          clearInterval(id);
-          finishGame();
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-    setTimerId(id);
-  };
-
-  const handleCardClick = (index: number) => {
-    if (state !== "active") return;
-    if (flippedIndices.length >= 2) return;
-    if (cards[index].flipped || cards[index].matched) return;
-
-    setCards((prev) => prev.map((c, i) => i === index ? { ...c, flipped: true } : c));
-    setFlippedIndices((prev) => [...prev, index]);
-
-    if (flippedIndices.length === 1) {
-      const firstIndex = flippedIndices[0];
-      if (cards[firstIndex].emoji === cards[index].emoji) {
-        setCards((prev) => prev.map((c, i) =>
-          i === firstIndex || i === index ? { ...c, matched: true } : c
-        ));
-        setMatchedPairs((p) => p + 1);
-        setFlippedIndices([]);
-        setMoves((m) => m + 1);
-
-        if (matchedPairs === 5) {
-          setTimeout(finishGame, 500);
-        }
-      } else {
-        setTimeout(() => {
-          setCards((prev) => prev.map((c, i) =>
-            i === firstIndex || i === index ? { ...c, flipped: false } : c
-          ));
-          setFlippedIndices([]);
-          setMoves((m) => m + 1);
-        }, 800);
-      }
-    }
-  };
-
-  const finishGame = () => {
-    if (timerId) clearInterval(timerId);
+  const finishGame = useCallback(() => {
+    if (timerIdRef.current) clearInterval(timerIdRef.current);
     const duration = 60000 - timeLeft * 1000;
     const result: GameResult = {
       gameId: config.id,
@@ -97,7 +46,80 @@ export function MemoryFlip({ onComplete, onExit, config }: GameProps) {
       metadata: { moves, matchedPairs, timeUsed: duration },
     };
     onComplete(result);
-  };
+  }, [config.id, timeLeft, moves, matchedPairs, onComplete]);
+
+  const startGame = useCallback(() => {
+    initializeCards();
+    setTimeLeft(60);
+    setState("active");
+
+    const id = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          if (timerIdRef.current) clearInterval(timerIdRef.current);
+          finishGame();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    timerIdRef.current = id;
+  }, [initializeCards, finishGame]);
+
+  const handleCardClick = useCallback((index: number) => {
+    if (state !== "active") return;
+    // Note: Using functional updates to avoid stale closures
+    setCards((prevCards) => {
+      const card = prevCards[index];
+      if (card.flipped || card.matched) return prevCards;
+      return prevCards.map((c, i) => i === index ? { ...c, flipped: true } : c);
+    });
+
+    setFlippedIndices((prevFlipped) => {
+      if (prevFlipped.length >= 2) return prevFlipped;
+      const newFlipped = [...prevFlipped, index];
+      if (newFlipped.length === 2) {
+        const firstIndex = newFlipped[0];
+        // Check match using current cards state
+        // We need to handle this asynchronously since setCards is async
+        setTimeout(() => {
+          setCards((currentCards) => {
+            const firstCard = currentCards[firstIndex];
+            const secondCard = currentCards[index];
+            if (firstCard.emoji === secondCard.emoji) {
+              setMatchedPairs((p) => p + 1);
+              return currentCards.map((c, i) =>
+                i === firstIndex || i === index ? { ...c, matched: true } : c
+              );
+            } else {
+              return currentCards.map((c, i) =>
+                i === firstIndex || i === index ? { ...c, flipped: false } : c
+              );
+            }
+          });
+          setFlippedIndices([]);
+          setMoves((m) => m + 1);
+          // Check for win after match check
+          setTimeout(() => {
+            setMatchedPairs((currentMatched) => {
+              if (currentMatched === 6) {
+                finishGame();
+              }
+              return currentMatched;
+            });
+          }, 100);
+        }, 800);
+      }
+      return newFlipped;
+    });
+    setMoves((m) => m + 1);
+  }, [state, finishGame]);
+
+  useEffect(() => {
+    return () => {
+      if (timerIdRef.current) clearInterval(timerIdRef.current);
+    };
+  }, []);
 
   if (state === "ready") {
     return (
@@ -155,6 +177,7 @@ export function MemoryFlip({ onComplete, onExit, config }: GameProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function registerGame(register: (entry: GameRegistryEntry) => void) {
   const entry: GameRegistryEntry = {
     config: {
@@ -168,5 +191,3 @@ export function registerGame(register: (entry: GameRegistryEntry) => void) {
   };
   register(entry);
 }
-
-import type { GameRegistryEntry } from "../../types/game";

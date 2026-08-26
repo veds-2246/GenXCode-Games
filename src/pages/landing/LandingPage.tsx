@@ -74,7 +74,7 @@ export function LandingPage() {
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl font-bold">Ready to Play?</h2>
             <p className="mt-4 text-slate-300 max-w-2xl mx-auto">
-              Register with your department, request access, and start competing in 10-minute arcade sessions.
+              Register, request access, and start competing in 10-minute arcade sessions.
             </p>
             <div className="mt-8">
               <Link to="/register">

@@ -6,4 +6,3 @@ export * from "./session/session";
 export * from "./scores/scores";
 export * from "./leaderboard/leaderboard";
 export * from "./games/games";
-export * from "./departments/departments";

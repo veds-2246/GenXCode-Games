@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "../../components/ui/Button";
 import { Card, CardContent } from "../../components/ui/Card";
-import type { GameProps, GameResult } from "../../types/game";
+import type { GameProps, GameResult, GameRegistryEntry } from "../../types/game";
 
 const COLORS = [
   { name: "Red", class: "bg-red-500", text: "text-red-500" },
@@ -19,54 +19,37 @@ export function ColorClash({ onComplete, onExit, config }: GameProps) {
   const [currentColor, setCurrentColor] = useState<typeof COLORS[0] | null>(null);
   const [currentText, setCurrentText] = useState("");
   const [match, setMatch] = useState(false);
+  const timerIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (state !== "active") return;
-    if (e.code === "ArrowLeft" || e.code === "KeyA") handleAnswer(true);
-    if (e.code === "ArrowRight" || e.code === "KeyD") handleAnswer(false);
-  }, [state]);
-
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
-
-  const startGame = () => {
-    setScore(0);
-    setTimeLeft(30);
-    setState("active");
-    nextRound();
-
-    const id = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          clearInterval(id);
-          finishGame();
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-  };
-
-  const nextRound = () => {
+  const nextRound = useCallback(() => {
     const color = COLORS[Math.floor(Math.random() * COLORS.length)];
     const textColor = COLORS[Math.floor(Math.random() * COLORS.length)];
     setCurrentColor(color);
     setCurrentText(textColor.name);
     setMatch(color.name === textColor.name);
-  };
+  }, []);
 
-  const handleAnswer = (userMatch: boolean) => {
+  const handleAnswer = useCallback((userMatch: boolean) => {
     if (userMatch === match) {
       setScore((s) => s + 10);
     } else {
       setScore((s) => Math.max(0, s - 5));
     }
     nextRound();
-  };
+  }, [match, nextRound]);
 
-  const finishGame = () => {
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (state !== "active") return;
+    if (e.code === "ArrowLeft" || e.code === "KeyA") handleAnswer(true);
+    if (e.code === "ArrowRight" || e.code === "KeyD") handleAnswer(false);
+  }, [state, handleAnswer]);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
+
+  const finishGame = useCallback(() => {
     const result: GameResult = {
       gameId: config.id,
       score,
@@ -75,7 +58,32 @@ export function ColorClash({ onComplete, onExit, config }: GameProps) {
       metadata: { correctAnswers: score / 10 },
     };
     onComplete(result);
-  };
+  }, [config.id, score, onComplete]);
+
+  const startGame = useCallback(() => {
+    setScore(0);
+    setTimeLeft(30);
+    setState("active");
+    nextRound();
+
+    const id = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          if (timerIdRef.current) clearInterval(timerIdRef.current);
+          finishGame();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    timerIdRef.current = id;
+  }, [nextRound, finishGame]);
+
+  useEffect(() => {
+    return () => {
+      if (timerIdRef.current) clearInterval(timerIdRef.current);
+    };
+  }, []);
 
   if (state === "ready") {
     return (
@@ -115,6 +123,7 @@ export function ColorClash({ onComplete, onExit, config }: GameProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function registerGame(register: (entry: GameRegistryEntry) => void) {
   const entry: GameRegistryEntry = {
     config: {
@@ -128,5 +137,3 @@ export function registerGame(register: (entry: GameRegistryEntry) => void) {
   };
   register(entry);
 }
-
-import type { GameRegistryEntry } from "../../types/game";

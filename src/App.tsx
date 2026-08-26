@@ -24,6 +24,7 @@ import {
 } from "./pages";
 
 import { ArcadeLayout } from "./components/layout";
+import { AdminRoute } from "./components/auth/AdminRoute";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   return (
@@ -41,10 +42,12 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 function PublicRoute({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <GameRegistryProvider>
-        <GameRegistryInitializer />
-        {children}
-      </GameRegistryProvider>
+      <SessionProvider>
+        <GameRegistryProvider>
+          <GameRegistryInitializer />
+          {children}
+        </GameRegistryProvider>
+      </SessionProvider>
     </AuthProvider>
   );
 }
@@ -127,13 +130,12 @@ function App() {
           />
 
           <Route
-            path="/leaderboard/department/:slug"
-            element={<LeaderboardPage />}
-          />
-
-          <Route
             path="/admin"
-            element={<AdminDashboard />}
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
           />
         </Route>
 

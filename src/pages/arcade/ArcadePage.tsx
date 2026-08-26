@@ -11,7 +11,7 @@ import { Loader } from "../../components/ui/Loader";
 
 export function ArcadePage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { session, loading: sessionLoading, isActive, fetchSession } = useSession();
   const { gameConfigs, loading: gamesLoading, error: gamesError } = useGames();
 
@@ -38,7 +38,10 @@ export function ArcadePage() {
     );
   }
 
-  if (!session) {
+  // Admins have implicit arcade access - they don't need an arcade session
+  const hasArcadeAccess = isAdmin || (session && isActive);
+
+  if (!hasArcadeAccess) {
     return (
       <div className="text-center py-12">
         <Card>
@@ -67,12 +70,17 @@ export function ArcadePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Arcade Hub</h1>
-          <p className="mt-1 text-slate-500">Welcome back, {user?.name}! Your 10-minute session is active.</p>
+          <p className="mt-1 text-slate-500">
+            {isAdmin
+              ? `Welcome back, ${user?.name}! Admin access active.`
+              : `Welcome back, ${user?.name}! Your 10-minute session is active.`}
+          </p>
         </div>
-        <SessionTimer session={session} />
+        {/* Only show session timer for players with actual sessions */}
+        {!isAdmin && session && <SessionTimer session={session} />}
       </div>
 
-      {isActive ? (
+      {isActive || isAdmin ? (
         <div>
           <h2 className="text-xl font-semibold text-slate-900 mb-4">Available Games</h2>
           {gamesError ? (
@@ -88,7 +96,7 @@ export function ArcadePage() {
                   description={game.description || "No description available"}
                   slug={game.slug}
                   onClick={() => navigate(game.routePath)}
-                  disabled={!isActive}
+                  disabled={!isActive && !isAdmin}
                 />
               ))}
             </div>

@@ -9,7 +9,6 @@ export const ROUTES = {
   RESULTS: (slug: string) => `/results/${slug}`,
   LEADERBOARD: "/leaderboard",
   LEADERBOARD_GAME: (slug: string) => `/leaderboard/${slug}`,
-  LEADERBOARD_DEPARTMENT: (slug: string) => `/leaderboard/department/${slug}`,
   ADMIN: "/admin",
   ADMIN_SESSIONS: "/admin/sessions",
   ADMIN_USERS: "/admin/users",

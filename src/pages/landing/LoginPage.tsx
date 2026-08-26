@@ -22,6 +22,8 @@ export function LoginPage() {
     if (error) {
       setError(error.message);
     } else {
+      // Admins go directly to arcade (they have implicit access)
+      // Players go to arcade - ArcadePage will handle session/access checks
       navigate("/arcade");
     }
     setLoading(false);

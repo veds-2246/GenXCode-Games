@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { Button } from "../../components/ui/Button";
 import { Card, CardContent } from "../../components/ui/Card";
-import type { GameProps, GameResult } from "../../types/game";
+import type { GameProps, GameResult, GameRegistryEntry } from "../../types/game";
 
 interface Item {
   id: number;
@@ -146,6 +146,7 @@ export function OddOneOut({ onComplete, onExit, config }: GameProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function registerGame(register: (entry: GameRegistryEntry) => void) {
   const entry: GameRegistryEntry = {
     config: {
@@ -159,5 +160,3 @@ export function registerGame(register: (entry: GameRegistryEntry) => void) {
   };
   register(entry);
 }
-
-import type { GameRegistryEntry } from "../../types/game";

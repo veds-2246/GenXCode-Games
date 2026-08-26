@@ -1,16 +1,15 @@
-import { useCallback, useState, useEffect } from "react";
-import { getGlobalLeaderboard, getDepartmentLeaderboard, getGameLeaderboard } from "../services/leaderboard/leaderboard";
+import { useCallback, useState, useEffect, useRef } from "react";
+import { getGlobalLeaderboard, getGameLeaderboard } from "../services/leaderboard/leaderboard";
 import type { LeaderboardEntry, LeaderboardFilters } from "../types/domain";
 
 interface UseLeaderboardOptions {
-  type: "global" | "department" | "game";
-  departmentId?: string;
+  type: "global" | "game";
   gameId?: string;
   initialFilters?: LeaderboardFilters;
 }
 
 export function useLeaderboard(options: UseLeaderboardOptions) {
-  const { type, departmentId, gameId, initialFilters = {} } = options;
+  const { type, gameId, initialFilters = {} } = options;
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -20,6 +19,7 @@ export function useLeaderboard(options: UseLeaderboardOptions) {
     ...initialFilters,
   });
   const [hasMore, setHasMore] = useState(true);
+  const fetchLeaderboardRef = useRef<((append?: boolean) => Promise<void>) | null>(null);
 
   const fetchLeaderboard = useCallback(async (append = false) => {
     setLoading(true);
@@ -29,8 +29,6 @@ export function useLeaderboard(options: UseLeaderboardOptions) {
       let response;
       if (type === "global") {
         response = await getGlobalLeaderboard(filters);
-      } else if (type === "department" && departmentId) {
-        response = await getDepartmentLeaderboard(departmentId, filters);
       } else if (type === "game" && gameId) {
         response = await getGameLeaderboard(gameId, filters);
       } else {
@@ -52,13 +50,20 @@ export function useLeaderboard(options: UseLeaderboardOptions) {
     } finally {
       setLoading(false);
     }
-  }, [type, departmentId, gameId, filters]);
+  }, [type, gameId, filters]);
 
   useEffect(() => {
-    setEntries([]);
-    setFilters((prev) => ({ ...prev, offset: 0 }));
-    fetchLeaderboard(false);
-  }, [type, departmentId, gameId, initialFilters]);
+    fetchLeaderboardRef.current = fetchLeaderboard;
+  }, [fetchLeaderboard]);
+
+  useEffect(() => {
+    const init = async () => {
+      setEntries([]);
+      setFilters((prev) => ({ ...prev, offset: 0 }));
+      await fetchLeaderboard(false);
+    };
+    init();
+  }, [type, gameId, initialFilters]);
 
   const loadMore = useCallback(() => {
     if (loading || !hasMore) return;
@@ -67,9 +72,9 @@ export function useLeaderboard(options: UseLeaderboardOptions) {
 
   useEffect(() => {
     if ((filters.offset ?? 0) > 0) {
-      fetchLeaderboard(true);
+      fetchLeaderboardRef.current?.(true);
     }
-  }, [filters.offset, fetchLeaderboard]);
+  }, [filters.offset]);
 
   const refresh = useCallback(() => {
     setFilters((prev) => ({ ...prev, offset: 0 }));

@@ -1,1 +1,1 @@
-export { MemoryFlip, registerGame } from "./MemoryFlip";
+export { registerGame } from "./MemoryFlip";

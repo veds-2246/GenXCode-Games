@@ -1,31 +1,43 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { getGames } from "../services/games/games";
 import { useGameRegistry } from "../contexts/GameRegistryContext";
 import type { Game, GameConfig } from "../types";
 
 export function useGames() {
-  const { getGameById: _getGameById } = useGameRegistry();
+  useGameRegistry();
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const mountedRef = useRef(true);
 
   const fetchGames = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await getGames();
-      if (response.error) {
-        setError(response.error);
-      } else {
-        setGames(response.data);
+      if (mountedRef.current) {
+        if (response.error) {
+          setError(response.error);
+        } else {
+          setGames(response.data);
+        }
       }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    fetchGames();
+    mountedRef.current = true;
+    const init = async () => {
+      await fetchGames();
+    };
+    init();
+    return () => {
+      mountedRef.current = false;
+    };
   }, [fetchGames]);
 
   const getGameConfig = useCallback((slug: string): GameConfig | undefined => {

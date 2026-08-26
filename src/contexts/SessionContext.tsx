@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "../lib/supabase";
-import type { ArcadeSession, UserRole, SessionStatus } from "../types";
+import type { ArcadeSession, SessionStatus } from "../types";
 import { SESSION_STATUS, SESSION_DURATION_MS, getTimeRemaining, isSessionActive, formatTimeRemaining } from "../constants/session";
+import { useAuth } from "./AuthContext";
 
 interface SessionContextType {
   session: ArcadeSession | null;
@@ -11,6 +12,7 @@ interface SessionContextType {
   formattedTimeRemaining: string;
   isActive: boolean;
   isWarning: boolean;
+  hasAccess: boolean;
   fetchSession: () => Promise<void>;
   createSession: (playerId: string) => Promise<{ session: ArcadeSession | null; error: Error | null }>;
   endSession: () => Promise<{ error: Error | null }>;
@@ -20,6 +22,7 @@ interface SessionContextType {
 const SessionContext = createContext<SessionContextType | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
+  const { isAdmin } = useAuth();
   const [session, setSession] = useState<ArcadeSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -35,7 +38,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
       const { data, error } = await supabase
         .from("arcade_sessions")
-        .select("*, profiles!arcade_sessions_player_id_fkey(*, departments(*)), granted_by_profile:profiles!arcade_sessions_granted_by_fkey(*, departments(*))")
+        .select("*, profiles!arcade_sessions_player_id_fkey(*), granted_by_profile:profiles!arcade_sessions_granted_by_fkey(*)")
         .eq("player_id", user.id)
         .order("started_at", { ascending: false })
         .limit(1)
@@ -52,16 +55,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           player: data.profiles ? {
             id: data.profiles.id,
             name: data.profiles.name,
-            department_id: data.profiles.department_id,
-            department: data.profiles.departments ? {
-              id: data.profiles.departments.id,
-              name: data.profiles.departments.name,
-              slug: data.profiles.departments.slug,
-              is_active: data.profiles.departments.is_active,
-              created_at: data.profiles.departments.created_at,
-            } : undefined,
             whatsapp_number: data.profiles.whatsapp_number,
-            role: data.profiles.role as UserRole,
+            role: data.profiles.role,
             created_at: data.profiles.created_at,
             updated_at: data.profiles.updated_at,
           } : undefined,
@@ -73,16 +68,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           granted_by_profile: data.granted_by_profile ? {
             id: data.granted_by_profile.id,
             name: data.granted_by_profile.name,
-            department_id: data.granted_by_profile.department_id,
-            department: data.granted_by_profile.departments ? {
-              id: data.granted_by_profile.departments.id,
-              name: data.granted_by_profile.departments.name,
-              slug: data.granted_by_profile.departments.slug,
-              is_active: data.granted_by_profile.departments.is_active,
-              created_at: data.granted_by_profile.departments.created_at,
-            } : undefined,
             whatsapp_number: data.granted_by_profile.whatsapp_number,
-            role: data.granted_by_profile.role as UserRole,
+            role: data.granted_by_profile.role,
             created_at: data.granted_by_profile.created_at,
             updated_at: data.granted_by_profile.updated_at,
           } : undefined,
@@ -99,10 +86,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    fetchSession();
+    let mounted = true;
+
+    const init = async () => {
+      await fetchSession();
+    };
+
+    init();
 
     const interval = setInterval(() => {
-      if (session) {
+      if (session && mounted) {
         const remaining = getTimeRemaining(session.expires_at);
         setTimeRemaining(remaining);
         if (remaining <= 0 && session.status === SESSION_STATUS.ACTIVE) {
@@ -111,14 +104,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       }
     }, 1000);
 
-    return () => clearInterval(interval);
-  }, [session]);
-
-  useEffect(() => {
-    if (session) {
-      const remaining = getTimeRemaining(session.expires_at);
-      setTimeRemaining(remaining);
-    }
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, [session]);
 
   const createSession = async (playerId: string) => {
@@ -180,6 +169,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   };
 
   const validateSession = (): boolean => {
+    // Admins always have valid access
+    if (isAdmin) return true;
     if (!session) return false;
     return isSessionActive(session.expires_at, session.status);
   };
@@ -187,6 +178,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const isActive = validateSession();
   const isWarning = timeRemaining > 0 && timeRemaining <= 30 * 1000;
   const formattedTimeRemaining = formatTimeRemaining(timeRemaining);
+  const hasAccess = isAdmin || isActive;
 
   return (
     <SessionContext.Provider value={{
@@ -197,6 +189,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       formattedTimeRemaining,
       isActive,
       isWarning,
+      hasAccess,
       fetchSession,
       createSession,
       endSession,
@@ -207,6 +200,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSession() {
   const context = useContext(SessionContext);
   if (!context) {
